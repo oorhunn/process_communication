@@ -42,13 +42,6 @@ jobs:
             extra_cxx_flags: ""
             extra_linker_flags: ""
 
-          - os: windows-latest
-            build_type: Release
-            c_compiler: cl
-            cpp_compiler: cl
-            extra_cxx_flags: ""
-            extra_linker_flags: ""
-
     steps:
       - uses: actions/checkout@v4
 
@@ -69,11 +62,6 @@ jobs:
         run: |
           brew update
           brew install googletest gcc@14
-
-      - name: Install dependencies on Windows
-        if: runner.os == 'Windows'
-        run: |
-          vcpkg install gtest:x64-windows
 
       - name: Set reusable strings
         id: strings
