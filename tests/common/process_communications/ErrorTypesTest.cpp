@@ -7,7 +7,7 @@
 
 #include <gtest/gtest.h>
 
-#include "process_communications/ErrorTypes.hpp"
+#include "ErrorTypes.hpp"
 
 namespace {
 

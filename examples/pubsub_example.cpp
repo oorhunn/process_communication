@@ -13,8 +13,8 @@
 #include <string_view>
 #include <vector>
 
-#include "process_communications/InprocTransport.hpp"
-#include "process_communications/TCPTransport.hpp"
+#include "InprocTransport.hpp"
+#include "TCPTransport.hpp"
 
 namespace {
 

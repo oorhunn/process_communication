@@ -17,7 +17,7 @@ set(UTILITY_PATH "${CMAKE_CURRENT_LIST_DIR}/utility")
 
 
 list(APPEND CMAKE_MODULE_PATH "${ROOT_PATH}")
-include(process_communication/process_communication)
+include(process_communication)
 
 add_subdirectory(examples)
 

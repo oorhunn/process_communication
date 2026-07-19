@@ -1,4 +1,4 @@
-# health_check_template
+# Process Communication
 
 A small **C++23 process-communication toolkit** built around a single
 publish/subscribe abstraction. It ships two interchangeable transports behind a
@@ -13,8 +13,8 @@ Both expose the same minimal surface — `subscribe(key, handler)` and
 `publish(key, bytes)` — so code written against the `Transport` concept can swap
 between an in-memory bus and a real network socket without changing call sites.
 
-> The name is a scaffold/template: it's a clean starting point for services that
-> need a health-check / telemetry channel between components.
+> It's a clean starting point for services that need a health-check / telemetry
+> channel between components.
 
 ---
 
@@ -22,20 +22,22 @@ between an in-memory bus and a real network socket without changing call sites.
 
 ```
 .
-├── common/process_communications/   # the library (header-only)
+├── src/                             # the library (header-only)
 │   ├── ErrorTypes.hpp               #   TransportError enum (the failure contract)
+│   ├── Heartbeat.hpp                #   liveness message + the "heartbeat" topic key
+│   ├── HeartbeatSender.hpp          #   periodic heartbeat send utility (poll-driven)
 │   ├── InprocTransport.hpp          #   in-process pub/sub
 │   └── TCPTransport.hpp             #   TCP transport, framing, the Transport concept
 ├── examples/                        # runnable demos
 │   ├── pubsub_example.cpp           #   both transports in one process
 │   ├── subscriber.cpp               #   standalone listener process
 │   └── publisher.cpp                #   standalone sender process
-├── tests/                           # GoogleTest suite, mirrors common/ layout
+├── tests/                           # GoogleTest suite
 │   └── common/process_communications/
 │       ├── ErrorTypesTest.cpp
 │       ├── InprocTransportTest.cpp
 │       └── TCPTransportTest.cpp
-├── main.cpp                         # tiny entry point (starts a TcpTransport listener)
+├── process_communication.cmake      # defines the lib::process_communications target
 └── CMakeLists.txt
 ```
 
@@ -60,7 +62,6 @@ cmake --build cmake-build-debug
 
 This produces:
 
-- `cmake-build-debug/health_check_template` — the main executable
 - `cmake-build-debug/examples/{pubsub_example,subscriber,publisher}`
 - `cmake-build-debug/tests/process_communications_tests`
 
@@ -83,9 +84,9 @@ over loopback sockets** (accept → publish → decode → dispatch).
 ### In-process (synchronous)
 
 ```cpp
-#include "common/process_communications/InprocTransport.hpp"
-using common::process_communications::inproc_transport::InprocTransport;
-using common::process_communications::inproc_transport::InprocTransportConfig;
+#include "InprocTransport.hpp"
+using lib::process_communications::inproc_transport::InprocTransport;
+using lib::process_communications::inproc_transport::InprocTransportConfig;
 
 InprocTransport bus{InprocTransportConfig{}};
 
@@ -114,6 +115,55 @@ TcpTransport client{{.m_port = 9100, .m_host = "127.0.0.1"}};
 client.connect_to_peer();
 client.publish("telemetry", payload);
 client.poll();   // flushes the queued bytes onto the socket
+```
+
+### Heartbeats (liveness)
+
+`Heartbeat` is a small serializable message so components can announce they're
+still alive. It works over either transport — publish it under the well-known
+`heartbeat` key, and decode it in the subscriber. It carries a source id, a
+per-source sequence number, and a timestamp; `encode()`/`decode()` never throw.
+
+```cpp
+#include "Heartbeat.hpp"
+using lib::process_communications::heartbeat::Heartbeat;
+using lib::process_communications::heartbeat::k_heartbeat_key;
+
+// sender: stamp one and publish it (call periodically from your loop)
+const auto beat = Heartbeat::make(/*source_id=*/1, /*sequence=*/seq++);
+transport.publish(k_heartbeat_key, beat.encode());
+
+// receiver: decode inside the subscriber
+transport.subscribe(k_heartbeat_key, [](std::span<const std::byte> bytes) {
+    if (const auto hb = Heartbeat::decode(bytes)) {
+        // hb->m_source_id, hb->m_sequence, hb->m_timestamp_ms
+    }
+});
+```
+
+**Periodic sending.** `HeartbeatSender` handles the "beat every N ms" bookkeeping
+for you — drop it into your own class as a member and call `tick()` from the same
+loop that drives `poll()`. It sends once up front, then throttles to the interval,
+auto-incrementing the sequence. It works with any transport exposing `publish()`
+(the `HeartbeatPublisher` concept) and holds a non-owning reference, so the
+transport must outlive it.
+
+```cpp
+#include "HeartbeatSender.hpp"
+using lib::process_communications::heartbeat::HeartbeatSender;
+using lib::process_communications::heartbeat::HeartbeatSenderConfig;
+using namespace std::chrono_literals;
+
+struct MyService {
+    TcpTransport m_transport{TcpTransport::TcpTransportConfig{.m_port = 9100}};
+    HeartbeatSender<TcpTransport> m_heartbeat{
+        m_transport, HeartbeatSenderConfig{.m_source_id = 1, .m_interval = 500ms}};
+
+    void run_once() {
+        m_transport.poll();   // drive socket I/O
+        m_heartbeat.tick();   // beats when 500ms have elapsed
+    }
+};
 ```
 
 ---

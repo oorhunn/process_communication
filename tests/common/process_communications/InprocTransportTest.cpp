@@ -10,8 +10,8 @@
 
 #include <gtest/gtest.h>
 
-#include "process_communications/ErrorTypes.hpp"
-#include "process_communications/InprocTransport.hpp"
+#include "ErrorTypes.hpp"
+#include "InprocTransport.hpp"
 
 namespace {
 

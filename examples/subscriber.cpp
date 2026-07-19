@@ -14,7 +14,7 @@
 #include <string>
 #include <thread>
 
-#include "process_communications/TCPTransport.hpp"
+#include "TCPTransport.hpp"
 
 namespace {
 

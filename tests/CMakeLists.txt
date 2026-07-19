@@ -4,6 +4,8 @@ include(GoogleTest)
 
 add_executable(process_communications_tests
         common/process_communications/ErrorTypesTest.cpp
+        common/process_communications/HeartbeatTest.cpp
+        common/process_communications/HeartbeatSenderTest.cpp
         common/process_communications/InprocTransportTest.cpp
         common/process_communications/TCPTransportTest.cpp)
 

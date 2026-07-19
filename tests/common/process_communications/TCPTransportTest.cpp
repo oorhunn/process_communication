@@ -17,8 +17,8 @@
 
 #include <gtest/gtest.h>
 
-#include "process_communications/ErrorTypes.hpp"
-#include "process_communications/TCPTransport.hpp"
+#include "ErrorTypes.hpp"
+#include "TCPTransport.hpp"
 
 namespace {
 
