@@ -1,0 +1,26 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+ColumnLimit: 120
+IndentWidth: 4
+ContinuationIndentWidth: 8
+AccessModifierOffset: -4
+NamespaceIndentation: All
+PointerAlignment: Right
+ReferenceAlignment: Right
+SpaceAfterTemplateKeyword: false
+AlwaysBreakTemplateDeclarations: Yes
+FixNamespaceComments: true
+SortIncludes: CaseSensitive
+IncludeBlocks: Preserve
+KeepEmptyLinesAtTheStartOfBlocks: true
+MaxEmptyLinesToKeep: 2
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+BreakBeforeBraces: Attach
+Cpp11BracedListStyle: true
+PackConstructorInitializers: NextLine
+BreakConstructorInitializers: BeforeColon
